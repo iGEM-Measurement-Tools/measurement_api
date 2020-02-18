@@ -22,6 +22,8 @@ pip install -r requirements.txt
 ```
 This virtual environment will not be committed to the repo, but should be used in case new dependencies are added. All dependencies should be explicit (ie, `Flask==1.1.1`, not `Flask`).
 
+This application does not require Docker - it can simply be run with `python3 wsgi.py` in the root directory.
+
 ## Dependencies
 All dependencies should be explicitly defined in `requirements.txt`. In addition, there should be no dependencies outside of the python environment for this package.
 
