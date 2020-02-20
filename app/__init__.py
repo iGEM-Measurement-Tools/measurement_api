@@ -16,7 +16,7 @@ auth = HTTPBasicAuth()
 authorizations = {'token': {'type': 'apiKey', 'in': 'header', 'name': 'token'}}
 
 api = Api(app,
-          prefix='/api_v1/',
+          prefix='/',
           version='0.1',
           title="iGEM Measurements API",
           description="iGEM Measurements API. All that data love!",
