@@ -1,0 +1,10 @@
+import requests
+
+url = "http://127.0.0.1:5000/experiments/file_upload/f29cb9a6-698f-4c6f-a936-b2af08d08bda"
+token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJleHAiOjE1ODIxNzE3NzAsImlhdCI6MTU4MjE2OTk3MCwibmFtZSI6Iktlb25pIn0.VxuPVIZQtK9KYoipLnrOAG46ZoMO1CKSUL731ZMrUsqXlTKMTNav6IptsXuFbkIyO82XnNv3SOLhQhjquQjVba77j4kFuPDMZ_8zkB6xxNpFabwiQ1YDOG-QfXu-deM7mONa0cnpaPWyBwrYA-t9DnPyS1DgKVGhST9Y63L60fNO1EZzD7wf45i20UXtbX26ynMgRXtp7M00tZFc97a5T4-zyI6c3w9zQ1K6u4yE0X1rz0EpRFBqnaYsIo317hMvbDiUWxnPep0OuuJWtX1uZ5R-s2lste9V-V8PJHwxTPzfadQHHPLoA8WlwNsy9BTz6gOkE05SX4EWcNZs5aTtvW6rlkwG-ZkcYB-RONGoj9ywc6OLUg3eHOiTxWi8LzAHcjdgeB2A18xWrn0KEt7nDAWCVsKD7Onqa1vvDiR3Lt8X31Sobwve6xlKHS2UoE81WYNaDB57Ti0lpMMLxXTFQE86bBXTU7VbqId7RLO3WpW8mOrMHmkHnVT0jHZTaBu3DPXWkCj8f1P8SG6o3l2t_InyIvZbMBUc7zGAZIwu3Uo2vrvM08ZDBAzV1CUuSM4hSblHwuAxa2We8uWU51VjcpSNb8IyuQNQL2OwtAvxdNNw7vfhoZp3Im11eHdwPdzMcNDF9TZ-SnYmhB3k8Bz35t4mZG8SvAcEoV2duZXM0SI"
+
+files = {'file': open('iGEM_2019_plate_reader_abs600---abs600.xlsx','rb')}
+
+r = requests.post('{}'.format(url),files=files,headers={"token":token})
+print(r.text)
+

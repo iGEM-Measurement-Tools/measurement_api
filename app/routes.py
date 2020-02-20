@@ -1,11 +1,12 @@
 from flask_restplus import Api, Resource, fields, Namespace
+import io
 from flask import Flask, abort, request, jsonify, g, url_for, redirect, make_response
 from flask_httpauth import HTTPBasicAuth
 import jwt
 from functools import wraps
 from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer,
                           BadSignature, SignatureExpired)
-
+import requests
 from .config import *
 from .models import *
 
@@ -46,16 +47,7 @@ def requires_auth(f):
         try:
             decoded = decode_token(str(request.headers['Token']))
         except Exception as e:
-            post_token = False
-            if request.json != None:
-                if 'token' in request.json:
-                    try:
-                        decoded = decode_token(request.json.get('token'))
-                        post_token = True
-                    except Exception as e:
-                        return make_response(jsonify({'message': str(e)}), 401)
-            if not post_token:
-                return make_response(jsonify({'message': str(e)}), 401)
+            return make_response(jsonify({'message': str(e)}), 401)
         return f(*args, **kwargs)
 
     return decorated
@@ -157,4 +149,79 @@ class ResourceRoute(Resource):
         return jsonify({'message': 'Success'})
 
 
-namespaces = [ns_teams, ns_keys]
+ns_experiments = Namespace('experiments', description='Experiments')
+experiment_model = ns_experiments.model("experiment_post", {
+    "protocol_type": fields.String(),
+    "name": fields.String()
+})
+
+
+@ns_experiments.route('/')
+class ExperimentRoute(Resource):
+    @ns_experiments.doc('post_new_experiment', security='token')
+    @ns_experiments.expect(experiment_model)
+    @requires_auth
+    def post(self):
+        decoded = decode_token(str(request.headers['Token']))
+        team = Team.query.filter_by(name=decoded["name"]).first()
+        experiment = Experiment(
+            team=team,
+            name=request.json.get("name"),
+            protocol_type=request.json.get("protocol_type"))
+        db.session.add(experiment)
+        db.session.commit()
+        return jsonify({"name": experiment.name})
+
+    @ns_experiments.doc('post_get_all', security='token')
+    @requires_auth
+    def get(self):
+        decoded = decode_token(str(request.headers['Token']))
+        team = Team.query.filter_by(name=decoded["name"]).first()
+        return jsonify([{
+            "uuid": experiment.uuid,
+            "name": experiment.name
+        } for experiment in Experiment.query.filter_by(team=team).all()])
+
+
+@ns_experiments.route('/file_upload/<uuid>')
+class ExperimentFile(Resource):
+    @ns_experiments.doc('new_result', security='token')
+    @requires_auth
+    def post(self, uuid):
+        f = request.files['file']
+        experiment = Experiment.query.filter_by(uuid=uuid).first()
+        experiment.file = f
+        db.session.add(experiment)
+        db.session.commit()
+
+        files = {'file': f}
+        headers = {"filename": f.filename}
+        url = "http://measurement-validator.libredna.org/"
+        r = requests.post('{}validate'.format(url),
+                          files=files,
+                          headers=headers)
+        if r.json()['succeed'] == True:
+            result = Result(experiment=experiment,
+                            result=r.json(),
+                            processed_by='octave_validator_v0.0.1')
+            db.session.add(result)
+            db.session.commit()
+            return jsonify(result.result)
+        else:
+            return jsonify(r.json())
+
+
+@ns_experiments.route('/results/<uuid>')
+class ExperimentalResults(Resource):
+    @ns_experiments.doc('view_result', security='token')
+    @requires_auth
+    def get(self, uuid):
+        experiment = Experiment.query.filter_by(uuid=uuid).first()
+        result = Result.query.filter_by(experiment=experiment).first()
+        return jsonify({
+            "result": result.result,
+            "processed_by": result.processed_by
+        })
+
+
+namespaces = [ns_teams, ns_experiments, ns_keys]

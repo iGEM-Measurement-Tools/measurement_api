@@ -101,18 +101,21 @@ class Experiment(db.Model):
     time_created = db.Column(db.DateTime(timezone=True),
                              server_default=func.now())
     time_updated = db.Column(db.DateTime(timezone=True), onupdate=func.now())
+    name = db.Column(db.String, nullable=False)
     protocol_type = db.Column(
         db.String,
         CheckConstraint(
             "protocol_type in ('iGEM_2019_plate_reader_fluorescence_v2','iGEM_2019_plate_reader_abs600','iGEM_2019_flow_cytometer_fluorescence','iGEM_2019_plate_reader_fluorescence','iGEM_2018_plate_reader_fluorescence'"
         ))
     blob_hash = db.Column(
-        db.String, unique=True, nullable=False
+        db.String, unique=True
     )  # A hash of the blob file, to make sure uploads do not occur twice
     blob = db.Column(
-        db.LargeBinary, nullable=False
+        db.LargeBinary
     )  # The blob file itself. Eventually, move to an object store
-    team_id = db.Column(UUID, db.ForeignKey('teams.uuid'), nullable=False)
+    team_id = db.Column(UUID(as_uuid=True),
+                        db.ForeignKey('teams.uuid'),
+                        nullable=False)
     results = db.relationship('Result',
                               backref='experiment',
                               cascade="all, delete-orphan")
@@ -127,11 +130,10 @@ class Result(db.Model):
                              server_default=func.now())
     time_updated = db.Column(db.DateTime(timezone=True), onupdate=func.now())
 
-    experiment_id = db.Column(UUID,
+    experiment_id = db.Column(UUID(as_uuid=True),
                               db.ForeignKey('experiments.uuid'),
                               nullable=False)
-    validation_result = db.Column(db.String, nullable=False)
-    valid = db.Column(db.Boolean, nullable=False)
     result = db.Column(
         JSON
     )  # Add schema validators later https://github.com/gavinwahl/postgres-json-schema
+    processed_by = db.Column(db.String, nullable=False)
