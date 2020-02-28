@@ -9,8 +9,10 @@ from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer,
 import requests
 from .config import *
 from .models import *
+from flask_caching import Cache
 
 auth = HTTPBasicAuth()
+cache = Cache(config={'CACHE_TYPE': 'simple'})
 
 ###################
 ## Authorization ##
@@ -190,26 +192,17 @@ class ExperimentFile(Resource):
     def post(self, uuid):
         f = request.files['file']
         experiment = Experiment.query.filter_by(uuid=uuid).first()
-        experiment.file = f
+        experiment.blob = f.read()
         db.session.add(experiment)
-        db.session.commit()
+        db.session.commit() 
+        return jsonify({"message":"success"})
 
-        files = {'file': f}
-        headers = {"filename": f.filename}
-        url = "http://measurement-validator.libredna.org/"
-        r = requests.post('{}validate'.format(url),
-                          files=files,
-                          headers=headers)
-        if r.json()['succeed'] == True:
-            result = Result(experiment=experiment,
-                            result=r.json(),
-                            processed_by='octave_validator_v0.0.1')
-            db.session.add(result)
-            db.session.commit()
-            return jsonify(result.result)
-        else:
-            return jsonify(r.json())
-
+@cache.memoize(600)
+def get_results(url,excel_file,filename):
+    files = {'file': excel_file}
+    headers = {'filename': filename}
+    r = requests.post(url,files=files,headers=headers)
+    return r.json()
 
 @ns_experiments.route('/results/<uuid>')
 class ExperimentalResults(Resource):
@@ -217,11 +210,7 @@ class ExperimentalResults(Resource):
     @requires_auth
     def get(self, uuid):
         experiment = Experiment.query.filter_by(uuid=uuid).first()
-        result = Result.query.filter_by(experiment=experiment).first()
-        return jsonify({
-            "result": result.result,
-            "processed_by": result.processed_by
-        })
-
+        url = "https://validator-stage.tools.measurement.igem.org/validate"
+        return jsonify(get_results(url,experiment.blob,"{}---{}.xlsx".format(experiment.protocol_type,experiment.uuid)))
 
 namespaces = [ns_teams, ns_experiments, ns_keys]

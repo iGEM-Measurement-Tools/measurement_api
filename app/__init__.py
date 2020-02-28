@@ -5,7 +5,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from .models import db
 from flask_migrate import Migrate
-from .routes import namespaces
+from .routes import namespaces, cache
 from flask_httpauth import HTTPBasicAuth
 
 app = Flask(__name__)
@@ -22,6 +22,8 @@ api = Api(app,
           authorizations=authorizations)
 
 migrate = Migrate(app, db)
+
+cache.init_app(app)
 
 for ns in namespaces:
     api.add_namespace(ns)

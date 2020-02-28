@@ -116,24 +116,4 @@ class Experiment(db.Model):
     team_id = db.Column(UUID(as_uuid=True),
                         db.ForeignKey('teams.uuid'),
                         nullable=False)
-    results = db.relationship('Result',
-                              backref='experiment',
-                              cascade="all, delete-orphan")
 
-
-class Result(db.Model):
-    __tablename__ = 'results'
-    uuid = db.Column(UUID(as_uuid=True),
-                     default=sqlalchemy.text("uuid_generate_v4()"),
-                     primary_key=True)
-    time_created = db.Column(db.DateTime(timezone=True),
-                             server_default=func.now())
-    time_updated = db.Column(db.DateTime(timezone=True), onupdate=func.now())
-
-    experiment_id = db.Column(UUID(as_uuid=True),
-                              db.ForeignKey('experiments.uuid'),
-                              nullable=False)
-    result = db.Column(
-        JSON
-    )  # Add schema validators later https://github.com/gavinwahl/postgres-json-schema
-    processed_by = db.Column(db.String, nullable=False)
