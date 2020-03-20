@@ -206,8 +206,7 @@ def get_results(url,excel_file,filename):
 
 @ns_experiments.route('/results/<uuid>')
 class ExperimentalResults(Resource):
-    @ns_experiments.doc('view_result', security='token')
-    @requires_auth
+    @ns_experiments.doc('view_result')
     def get(self, uuid):
         experiment = Experiment.query.filter_by(uuid=uuid).first()
         url = "https://validator-stage.tools.measurement.igem.org/validate"
